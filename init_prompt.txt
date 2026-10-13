@@ -1,0 +1,709 @@
+Role
+Act as a Principal Data Architect, Data Platform Architect, and Platform Engineer with extensive experience designing enterprise-scale data ingestion and lakehouse architectures across Azure, AWS, Snowflake, Databricks, Kafka, and relational databases.
+You are responsible for defining a generic, reusable enterprise data-ingestion-pattern framework that can be used by multiple application and data teams.
+Do not design a solution for only one project or one technology. The objective is to create technology-neutral ingestion patterns with technology-specific implementation options.
+Objective
+Create a concise but comprehensive set of generic data ingestion patterns for moving data from various source systems into the following target platforms:
+Source Systems
+- ADLS
+- ADLS Landing Zone
+- Azure Databases
+- Other Relational Databases
+- Kafka
+- Amazon S3
+- Snowflake
+- Databricks
+- APIs where applicable
+- Files / file-based systems where applicable
+Target Platforms
+- Snowflake
+- ADLS / Data Lake
+- Databricks
+The patterns must be reusable across Azure, AWS, and hybrid/multi-cloud environments.
+The architecture should not assume that Azure is always the primary cloud. Consider both Azure and AWS, with Snowflake and Databricks treated as independent enterprise data platforms.
+Important Working Approach
+Do NOT immediately generate one huge document.
+Work in the following phases.
+Phase 1 – Identify Common Ingestion Patterns
+First analyze the problem and identify the minimum set of common enterprise ingestion patterns needed to cover most real-world scenarios.
+For example, consider patterns such as:
+1. Batch File → Data Lake
+2. Batch File → Snowflake
+3. Batch File → Databricks
+4. Database → Data Lake
+5. Database → Snowflake
+6. Database → Databricks
+7. Database → Data Lake → Snowflake
+8. Database → Data Lake → Databricks
+9. Kafka → Data Lake
+10. Kafka → Databricks
+11. Kafka → Snowflake
+12. ADLS/S3 → Snowflake
+13. ADLS/S3 → Databricks
+14. Snowflake → Data Lake
+15. Snowflake → Databricks
+16. Databricks → Snowflake
+17. Historical / One-Time Data Migration
+18. Incremental / CDC Ingestion
+19. Full Refresh Ingestion
+20. Streaming / Near-Real-Time Ingestion
+21. Hybrid Batch + Streaming
+22. Reprocessing / Backfill Pattern
+Do not blindly use this list.
+Analyze and consolidate overlapping patterns. Avoid creating unnecessary patterns that are technically the same architecture with only a different product name.
+Produce a Pattern Catalog containing:
+Pattern IDPattern NameSourceTargetIngestion ModePrimary Use Case
+For every proposed pattern explain briefly:
+- Why this pattern is needed
+- What scenarios it covers
+- Which other patterns overlap with it
+- Whether it should be a standalone pattern or a variation of another pattern
+At the end of Phase 1, establish the final approved pattern catalog.
+Phase 2 – Develop Each Pattern Independently
+After establishing the catalog, develop each ingestion pattern as a separate Markdown file.
+This is important.
+Do not allow the context of one pattern to unnecessarily consume the context required for another pattern.
+Each pattern should be independently understandable and reusable.
+Use the following naming convention:
+01-pattern-name.md
+02-pattern-name.md
+03-pattern-name.md
+...
+Also create:
+00-ingestion-pattern-catalog.md
+README.md
+The README should explain how the pattern documents should be used.
+Standard Structure for Every Pattern
+Every pattern Markdown file should follow this structure.
+1. Pattern Overview
+Include:
+- Pattern name
+- Pattern ID
+- Objective
+- Applicable sources
+- Applicable targets
+- Typical use cases
+- When to use
+- When NOT to use
+2. Reference Architecture
+Create a clear architecture diagram.
+Use Mermaid diagrams whenever possible because the output must be Markdown.
+Example:
+flowchart LR
+    Source --> Landing
+    Landing --> Processing
+    Processing --> Target
+    Processing --> Audit
+    Processing --> Monitoring
+The diagrams should show the important architectural components rather than decorative boxes.
+Where applicable show:
+- Source
+- Landing zone
+- Raw/Bronze layer
+- Processing
+- Target
+- Metadata
+- Control tables
+- Checkpointing
+- Error handling
+- Monitoring
+- Security
+- Governance
+- Retry/reprocessing path
+Do not create diagrams merely for the sake of having diagrams.
+3. End-to-End Data Flow
+Explain the complete lifecycle:
+Source
+  ↓
+Extraction
+  ↓
+Landing
+  ↓
+Validation
+  ↓
+Transformation
+  ↓
+Target Load
+  ↓
+Validation
+  ↓
+Audit
+  ↓
+Monitoring
+Explain each stage briefly.
+4. Ingestion Mode
+Identify the appropriate ingestion mode:
+- Full load
+- Incremental load
+- CDC
+- Timestamp-based extraction
+- Watermark-based extraction
+- Log-based CDC
+- Event-driven
+- Micro-batch
+- Streaming
+- Snapshot
+- One-time migration
+- Backfill
+Explain why the selected method is appropriate.
+5. Decision Criteria
+Every pattern must explicitly evaluate:
+Data Volume
+Consider:
+- Small
+- Medium
+- Large
+- Very large
+- TB/PB scale
+Discuss how volume influences:
+- Architecture
+- Parallelism
+- Partitioning
+- File sizing
+- Compute
+- Network
+- Cost
+Data Freshness
+Consider:
+- Daily
+- Hourly
+- Every 15–30 minutes
+- Near real-time
+- Real-time
+Explain how freshness requirements influence the architecture.
+SLA
+Consider:
+- Batch SLA
+- Data availability SLA
+- Processing SLA
+- Recovery SLA
+- RPO
+- RTO
+Explain how the pattern changes based on SLA requirements.
+Data History
+Consider:
+- Current state only
+- Historical snapshots
+- Full history
+- Slowly changing dimensions
+- Audit requirements
+Initial Load vs Incremental Load
+Clearly explain:
+- Initial/full load
+- Incremental load
+- CDC
+- Restart
+- Resume
+- Reconciliation
+6. Insert / Update / Delete Handling
+Every pattern must explicitly explain how it handles:
+Inserts
+How new records are identified and loaded.
+Updates
+How changed records are detected.
+Deletes
+Explain possible approaches:
+- Hard delete
+- Soft delete
+- Delete flag
+- CDC delete events
+- Tombstone records
+- MERGE-based deletion
+- Periodic reconciliation
+Explain the advantages and disadvantages of each.
+Do not assume that deletes are always available from the source.
+7. SCD Strategy
+Explain when to use:
+SCD Type 1
+Use when:
+- History is not required
+- Latest state is sufficient
+- Corrections should overwrite previous values
+SCD Type 2
+Use when:
+- Historical tracking is required
+- Effective dating is required
+- Business analysis depends on historical state
+Explain typical implementation fields such as:
+effective_start_date
+effective_end_date
+is_current
+record_hash
+source_system
+load_timestamp
+Also explain when SCD Type 2 should NOT be used.
+Where appropriate discuss:
+- SCD 0
+- SCD 1
+- SCD 2
+- Hybrid approaches
+Do not overcomplicate the document with SCD types that are not relevant to the pattern.
+8. File Format Decision
+Where files are involved, evaluate:
+- Parquet
+- Delta Lake
+- Apache Iceberg
+- Apache Hudi
+- Delta Lake + UniForm where applicable
+Explain:
+Parquet
+Advantages:
+- Open columnar format
+- Broad interoperability
+- Good compression
+- Works well for analytical workloads
+Limitations:
+- File format alone does not provide transactional table capabilities
+- Updates/deletes require additional processing or table-layer technology
+Delta Lake
+Evaluate:
+- ACID transactions
+- MERGE
+- UPDATE
+- DELETE
+- Time travel
+- Schema evolution
+- Databricks integration
+Apache Iceberg
+Evaluate:
+- Open table format
+- Multi-engine support
+- Schema evolution
+- Partition evolution
+- Time travel
+- AWS ecosystem compatibility
+- Snowflake interoperability where applicable
+Apache Hudi
+Evaluate:
+- Incremental processing
+- CDC-oriented workloads
+- Upserts
+- Deletes
+- Streaming ingestion
+- Operational complexity
+Delta Lake + UniForm
+Evaluate:
+- Interoperability
+- Multi-engine access
+- Metadata compatibility
+- When it is useful
+- Limitations and prerequisites
+Do not simply list features.
+Explain which format is appropriate for which ingestion pattern and why.
+9. Format Selection Decision Matrix
+For each applicable pattern provide a concise decision matrix.
+Example:
+RequirementParquetDeltaIcebergHudiAppend-onlyHighHighHighHighFrequent UpdatesLowHighHighHighDeletesLowHighHighHighCDCMediumHighHighHighMulti-engineHighMedium/HighHighHighDatabricks-nativeHighExcellentExcellentGoodSimple interchangeExcellentGoodGoodMedium
+Do not blindly reuse the same scores for every pattern.
+Modify the matrix based on the actual pattern.
+10. Target-Specific Considerations
+Explain how the pattern can be implemented when the target is:
+Snowflake
+Consider:
+- Snowpipe / Snowpipe Streaming where applicable
+- COPY-based ingestion
+- External stages
+- External tables where appropriate
+- Streams
+- Tasks
+- MERGE
+- Dynamic Tables where appropriate
+- Snowflake-managed storage vs external data lake
+- File formats
+- Cost
+- Performance
+Do not force every Snowflake feature into every pattern.
+ADLS / Data Lake
+Consider:
+- Landing zone
+- Raw/Bronze
+- Curated/Silver
+- Consumption/Gold
+- File organization
+- Partitioning
+- Small-file problem
+- Schema evolution
+- Retention
+- Lifecycle policies
+Databricks
+Consider:
+- Delta Lake
+- Unity Catalog
+- Auto Loader where appropriate
+- Structured Streaming
+- Batch processing
+- MERGE
+- DLT/Lakeflow where applicable
+- Checkpointing
+- Schema evolution
+- Workflows
+- Data quality
+- Governance
+11. AWS and Azure Considerations
+The organization operates in a mixed cloud environment.
+Therefore explicitly consider:
+Azure
+Potential services:
+- ADLS Gen2
+- Event Hubs
+- Azure Database services
+- Databricks
+- Azure networking/security services
+AWS
+Potential services:
+- S3
+- MSK/Kafka
+- RDS/Aurora
+- Glue
+- EMR
+- Kinesis
+- Lambda where appropriate
+- Databricks
+Do not assume equivalent services are identical.
+Highlight important architectural differences where they materially affect the pattern.
+12. Security
+Every pattern should cover relevant security considerations:
+- Encryption at rest
+- Encryption in transit
+- IAM/RBAC
+- Managed identities / roles
+- Secrets management
+- Network isolation
+- Private endpoints
+- Least privilege
+- Data classification
+- PII / sensitive data
+- Audit logging
+Keep this section concise.
+13. Data Quality
+Include appropriate checks:
+- Schema validation
+- Null checks
+- Duplicate detection
+- Record count reconciliation
+- Source-to-target reconciliation
+- Referential integrity where applicable
+- Data freshness
+- Completeness
+- Validity
+- Unexpected schema changes
+Explain where quality checks should occur.
+14. Reliability and Failure Handling
+Every pattern must explain:
+- Retry
+- Idempotency
+- Checkpointing
+- Resume capability
+- Partial failure
+- Duplicate prevention
+- Dead-letter/error handling
+- Backfill
+- Replay
+- Reprocessing
+- Poison records
+- Dependency failure
+Explain how to avoid duplicate data after retry.
+15. Observability
+Define minimum observability requirements:
+Operational Metrics
+- Records read
+- Records written
+- Records rejected
+- Processing duration
+- Throughput
+- Lag
+- Error count
+- Retry count
+- File count
+- File size
+- Data freshness
+- SLA status
+Technical Monitoring
+- Pipeline failures
+- Source connectivity
+- Target connectivity
+- Compute failures
+- Storage failures
+- Schema changes
+- Kafka lag where applicable
+Business Monitoring
+- Unexpected volume changes
+- Missing files
+- Missing partitions
+- Unexpected data changes
+16. Metadata and Audit
+Define recommended metadata such as:
+batch_id
+pipeline_id
+source_system
+source_object
+target_object
+load_start_time
+load_end_time
+record_count
+insert_count
+update_count
+delete_count
+error_count
+status
+watermark
+execution_id
+Explain which metadata is mandatory versus optional.
+17. Performance and Scalability
+Discuss:
+- Parallelism
+- Partitioning
+- File size
+- Small-file problem
+- Compression
+- Network throughput
+- Compute scaling
+- Query performance
+- Concurrent workloads
+- Backpressure for streaming
+- Cost/performance trade-offs
+Do not provide arbitrary numbers unless there is a strong architectural basis.
+18. Cost Considerations
+Discuss major cost drivers:
+- Compute
+- Storage
+- Network/data transfer
+- Streaming infrastructure
+- Snowflake warehouse usage
+- Databricks compute
+- AWS/Azure managed services
+Explain when a simpler architecture may be more cost-effective.
+19. Trade-Offs
+Provide a concise table:
+DecisionOption AOption BTrade-Off
+Focus on meaningful architectural decisions such as:
+- Batch vs streaming
+- Full vs incremental
+- CDC vs timestamp
+- Parquet vs Delta/Iceberg/Hudi
+- Direct load vs landing zone
+- ETL vs ELT
+- Centralized vs decentralized ingestion
+20. Alternatives
+For every pattern identify:
+- Recommended approach
+- Alternative approach
+- When to use alternative
+- Why the recommended approach is preferred
+Avoid presenting every possible technology as equally appropriate.
+Make an architectural recommendation.
+21. Decision Tree
+Every major pattern should include a small decision tree using Mermaid.
+Example:
+flowchart TD
+    A[New Source] --> B{Streaming Required?}
+    B -->|Yes| C[Streaming Pattern]
+    B -->|No| D{Incremental Available?}
+    D -->|Yes| E[Incremental/CDC]
+    D -->|No| F[Full Load]
+Keep decision trees practical and easy to follow.
+22. Pattern Selection Checklist
+End each pattern with a checklist:
+-  Volume assessed
+-  Freshness requirement defined
+-  SLA defined
+-  Initial load strategy defined
+-  Incremental strategy defined
+-  Update handling defined
+-  Delete handling defined
+-  History requirement defined
+-  SCD requirement defined
+-  File format selected
+-  Security reviewed
+-  Data quality defined
+-  Monitoring defined
+-  Failure recovery defined
+-  Cost reviewed
+-  RPO/RTO reviewed
+Phase 3 – Cross-Pattern Comparison
+After all individual patterns are created, create:
+99-ingestion-pattern-decision-matrix.md
+This document should allow an architect to quickly select the correct pattern.
+Include dimensions such as:
+RequirementRecommended PatternOne-time migrationLarge historical loadDaily batchHourly ingestionNear real-timeCDCHigh-volume databaseKafka sourceFile sourceSnowflake sourceDatabricks sourceUpdate-heavyDelete-heavyFull history requiredLatest state onlyMulti-cloud
+Also create a concise pattern selection decision tree.
+Phase 4 – Principal Architect Review
+Before finalizing anything, review the complete solution as a:
+Principal Data Architect
+Challenge the architecture for:
+- Reusability
+- Simplicity
+- Scalability
+- Technology neutrality
+- Cloud neutrality
+- Long-term maintainability
+- Governance
+- Data lifecycle
+- Interoperability
+- Avoidance of vendor lock-in
+- Operational complexity
+Ask:
+Would I approve this architecture for an enterprise platform?
+Phase 5 – Platform Engineer Review
+Review the architecture from an implementation and operations perspective.
+Challenge:
+- Deployment complexity
+- Monitoring
+- Alerting
+- Retry
+- Recovery
+- Reprocessing
+- Checkpointing
+- Idempotency
+- CI/CD
+- Infrastructure-as-Code
+- Secrets
+- IAM/RBAC
+- Networking
+- Cost
+- Operational support
+- Disaster recovery
+Ask:
+Can an engineering/platform team actually operate this architecture reliably?
+Phase 6 – Data Engineering Review
+Review from a data engineering perspective.
+Validate:
+- Incremental processing
+- CDC
+- MERGE
+- SCD1/SCD2
+- Deletes
+- Schema evolution
+- Data quality
+- Partitioning
+- File sizing
+- Backfill
+- Reprocessing
+- Historical data
+- Performance
+Phase 7 – Simplification Review
+This is extremely important.
+After the technical reviews, remove:
+- Repeated explanations
+- Unnecessary technologies
+- Duplicate patterns
+- Excessive diagrams
+- Generic textbook explanations
+- Features that do not affect the architecture
+- Unnecessary implementation details
+The final documentation should be architecture-focused rather than a technology encyclopedia.
+Documentation Requirements
+The final documentation should be:
+- Concise
+- Architecture-focused
+- Enterprise-ready
+- Easy for architects and engineers to consume
+- Reusable
+- Cloud-neutral where possible
+- Specific where technology differences matter
+Avoid creating an excessively long document.
+Prefer multiple focused Markdown files rather than one extremely large document.
+Required Files
+Create at minimum:
+README.md
+
+00-ingestion-pattern-catalog.md
+
+01-<pattern>.md
+02-<pattern>.md
+03-<pattern>.md
+...
+
+99-ingestion-pattern-decision-matrix.md
+If a pattern is sufficiently different to deserve its own document, keep it separate.
+If two patterns are technically the same architecture with only a minor implementation difference, combine them.
+Google Drive Output
+Create all Markdown files under this Google Drive folder:
+https://drive.google.com/drive/folders/1MJramIZV_sqb3URWUhQyTL7yJDMt31XC?usp=drive_link
+Use this folder as the root location for the deliverables.
+Create a logical folder structure if supported:
+Data Ingestion Architecture/
+│
+├── README.md
+├── 00-ingestion-pattern-catalog.md
+├── patterns/
+│   ├── 01-...
+│   ├── 02-...
+│   └── ...
+└── 99-ingestion-pattern-decision-matrix.md
+If the connected Google Drive capability does not support creating folders or files directly, do not pretend that the files were created. Clearly identify the limitation and provide the final Markdown content in a structured manner.
+Quality Rules
+Before producing the final output, verify:
+1. No major enterprise ingestion scenario is missing.
+2. No unnecessary duplicate patterns exist.
+3. Every pattern has a clear use case.
+4. Every pattern identifies when NOT to use it.
+5. Volume, freshness, SLA, history and load type are explicitly considered.
+6. Insert/update/delete behavior is defined.
+7. SCD1/SCD2 decisions are explained.
+8. File-format selection is justified.
+9. Parquet, Delta Lake, Iceberg, Hudi and Delta Lake + UniForm are addressed where relevant.
+10. Snowflake, ADLS and Databricks targets are covered.
+11. Azure and AWS considerations are covered.
+12. One-time and historical migration are covered.
+13. Batch and streaming are covered.
+14. CDC is covered.
+15. Failure recovery and resumability are covered.
+16. Idempotency is addressed.
+17. Monitoring and observability are addressed.
+18. Security is addressed.
+19. Cost is addressed.
+20. Architecture diagrams are useful and technically accurate.
+21. Mermaid syntax is valid.
+22. No unsupported product capabilities are presented as facts.
+23. Vendor-specific features are clearly identified.
+24. Recommendations are differentiated from alternatives.
+25. Documentation is concise enough for practical enterprise use.
+Final Review Questions
+Before declaring the work complete, answer these questions internally:
+Architecture
+- Is there a simpler architecture?
+- Are we introducing unnecessary components?
+- Are we accidentally designing around one cloud provider?
+- Are we creating unnecessary vendor lock-in?
+Data
+- How are inserts handled?
+- How are updates handled?
+- How are deletes handled?
+- How is history preserved?
+- How are late-arriving records handled?
+- How are duplicates prevented?
+Operations
+- What happens when the source fails?
+- What happens when the target fails?
+- What happens when only part of the load succeeds?
+- Can the pipeline restart safely?
+- Can the data be replayed?
+- Can historical data be backfilled?
+Performance
+- What happens when volume increases 10x?
+- What happens when freshness requirements become stricter?
+- What happens when multiple pipelines run simultaneously?
+Platform
+- Can this be automated?
+- Can it be monitored?
+- Can it be deployed consistently?
+- Can the platform team support it?
+Cost
+- Is the architecture cost-effective?
+- Is streaming really required?
+- Is CDC really required?
+- Could batch satisfy the SLA?
+Governance
+- Is access controlled?
+- Is sensitive data protected?
+- Is lineage available?
+- Is auditability sufficient?
+Important Instruction
+Do not optimize for the number of documents.
+Optimize for architectural clarity and reuse.
+The final result should allow a Data Architect or Data Engineer to answer:
+"Given this source, target, volume, freshness, SLA, history requirement, and update/delete behavior, which ingestion pattern should I choose, why should I choose it, and what are the trade-offs?"
+The documentation should make that decision easy.
+Start with Phase 1: Pattern Catalog and Pattern Consolidation.
+Do not start writing the detailed pattern documents until the common pattern taxonomy has been established.
